@@ -1,0 +1,8 @@
+.card {
+    width: 20%;
+    float: left;
+}
+
+.card > img {
+    width: 90%;
+}
