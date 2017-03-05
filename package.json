@@ -1,0 +1,24 @@
+{
+  "name": "video_poker",
+  "version": "1.0.0",
+  "description": "Learning ES6 by making video poker. In collaboration with Shelton and Justin",
+  "main": "index.js",
+  "dependencies": {
+    "pokersolver": "^2.1.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bxie/video_poker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bxie/video_poker/issues"
+  },
+  "homepage": "https://github.com/bxie/video_poker#readme"
+}
