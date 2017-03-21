@@ -7,7 +7,7 @@
 * http://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array   * The Knuth Shuffle as referenced at https://git.daplie.com/Daplie/knuth-shuffle
 */
 
-
+const HAND_SIZE = 5;
 
 //Shortcut function for document.querySelector(selector)
 var qs = function(ele) {
@@ -44,6 +44,24 @@ var PokerModel = (function(){
 	
 
 	return {
+		/*
+		* Draws a user given number of cards from the deck and returns the 
+		* drawn cards in an array.
+		* NOTE: Deck can run out of cards, so consider a way to add more 
+		* cards into the deck.
+		*/
+		drawCards: function(numCards) {
+			var arr = [];
+			for(var i = 0; i < numCards; i++){
+				arr.push(deck.shift());
+			}
+			return arr;
+		},
+		
+		//Returns the current deck
+		getDeck:function(){
+			return deck;
+		},
 		
 		/*
 		* Initalizes the PokerModel by filling the deck and then shuffling 
@@ -74,10 +92,6 @@ var PokerModel = (function(){
 			}
 			return array;
 		},
-		
-		getDeck:function(){
-			return deck;
-		},
 	}
 })();
 
@@ -101,14 +115,11 @@ var PokerView = (function(){
 	};
 	
 	return {
-		newHand: function() {
-			
-		},
-		
 		/*
-		*
+		* Clears the hand of all cards by setting each card in the hand
+		* to a blank card
 		*/
-		discardHand: function(){
+		clearHand: function(){
 			var hand = document.querySelectorAll(".card");
 			for(var i = 0; i < hand.length; i ++){
 				//img child node is assumed to be at index 1
@@ -123,6 +134,21 @@ var PokerView = (function(){
 		*/
 		getRef: function(){
 			return ref;
+		},
+		
+		/*
+		* Updates the hand by discarding any cards the player has choosen, and 
+		* dealing out new cards. If no cards are choosen, then an entirely new 
+		* hand is given out. 
+		* The new cards are passed in via the parameter newCards.
+		* IN PROGRESS (Does not check player's choosen cards and discards entire hand)
+		*/
+		updateHand: function(newCards) {
+			var hand = document.querySelectorAll(".card");
+			for (var i = 0; i < hand.length; i++){
+				//img child node is assumed to be at index 1
+				hand[i].childNodes[1].src = "img/cards/" + newCards[i] + ".png";
+			}
 		},
 	};
 })();
@@ -158,6 +184,7 @@ var PokerAdapter = (function(){
 	* signals the model and view to begin drawing cards for play.
 	*/
 	var drawCards = function() {
+		PokerView.updateHand(PokerModel.drawCards(HAND_SIZE));
 		console.log("Drawing cards");
 	}
 	
@@ -189,6 +216,7 @@ var PokerAdapter = (function(){
 	return {
 		init: function() {
 			setupListeners();
+			PokerModel.init();
 		},
 	}
 })();
