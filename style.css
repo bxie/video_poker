@@ -6,3 +6,7 @@
 .card > img {
     width: 90%;
 }
+
+.unselected {
+    opacity: 0.4;
+}
