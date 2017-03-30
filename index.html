@@ -6,70 +6,69 @@
     <title>Video Poker</title>
 </head>
 <body>
-    <div class="top">
-        <div class="help">
-            <a href="#">rules</a> |
-            <a href="#">scoring</a> |
-            <a href="#">code</a>
+<div class="top">
+    <div class="help">
+        <a href="#">rules</a> |
+        <a href="#">scoring</a> |
+        <a href="#">code</a>
+    </div>
+</div>
+
+<br/>
+
+<div class="main">
+    <div class="title">Video Poker</div>
+    <div class="cards">
+        <div class="card" id="card-9c">
+            <img src="img/cards/9c.png" />
+        </div>
+
+        <div class="card blank">
+            <img src="img/blank_card.png" />
+        </div>
+
+        <div class="card" id="card-5d">
+            <img src="img/cards/5d.png" />
+        </div>
+
+        <div class="card" id="card-Ah">
+            <img src="img/cards/Ah.png" />
+        </div>
+
+        <div class="card blank">
+            <img src="img/blank_card.png" />
         </div>
     </div>
+</div>
 
-    <br/>
+<br/>
 
-    <div class="main">
-        <div class="title">Video Poker</div>
-        <div class="cards">
-            <div class="card" id="card-9c">
-                <img src="img/cards/9c.png" />
-            </div>
-
-            <div class="card blank">
-                <img src="img/blank_card.png" />
-            </div>
-
-            <div class="card" id="card-5d">
-                <img src="img/cards/5d.png" />
-            </div>
-
-            <div class="card" id="card-Ah">
-                <img src="img/cards/Ah.png" />
-            </div>
-
-            <div class="card blank">
-                <img src="img/blank_card.png" />
-            </div>
-
-
-        </div>
-    </div>
-
-    <br/>
-
-    <div class="footer">
-        <div class="scores">
-            <div class="score">
-                Bet: <span id="bet">2</span>
-            </div>
-
-            <div class="score">
-                Hand: <span id="hand">0</span>
-            </div>
-
-            <div class="bank">
-                Bank: <span id="bank">87</span>
-            </div>
-
+<div class="footer">
+    <div class="scores">
+        <div class="score">
+            Bet: <span id="bet">2</span>
         </div>
 
-        <div class="actions">
-            <!--<button class="btn" id="btn-bet">Bet</button>-->
-            <!--<button class="btn" id="btn-deal">Deal</button>-->
-            <button class="btn" id="btn-stand">Stand</button>
-            <button class="btn" id="btn-draw">Draw</button>
+        <div class="score">
+            Hand: <span id="hand">0</span>
+        </div>
+
+        <div class="bank">
+            Bank: <span id="bank">87</span>
         </div>
 
     </div>
 
+    <div class="actions">
+        <button class="btn" id="btn-start">Start</button>
+        <button class="btn" id="btn-deal">Deal</button>
+        <button class="btn" id="btn-bet">Bet</button>
+        <button class="btn" id="btn-discard">Discard</button>
+    </div>
+
+</div>
+
+<script src="app.js"></script>
 
 </body>
 </html>
