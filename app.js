@@ -75,8 +75,8 @@ class UiController {
         // Insert cards from hand
         hand.forEach((cur) => {
             let html = `<div class="card" id="${cur}"><img src="img/cards/${cur}.png" /></div>`;
-        document.querySelector(this.getDomStrings().cardContainer).insertAdjacentHTML('beforeend', html);
-    });
+            document.querySelector(this.getDomStrings().cardContainer).insertAdjacentHTML('beforeend', html);
+        });
     }
 
     // Display blank cards.
@@ -104,6 +104,14 @@ class UiController {
         el.disabled = (disabled === undefined ? !el.isDisabled : disabled);
     }
 
+    static setCreditText(credits) {
+        document.getElementById(this.getDomStrings().bankAmtId).textContent = credits;
+    }
+
+    static updateBet(multi) {
+        document.getElementById(this.getDomStrings().betMultiId).textContent = multi + "x";
+    }
+
     // Method that returns object that stores DOM strings.
     static getDomStrings() {
         return {
@@ -112,15 +120,21 @@ class UiController {
             discardBtnId: 'btn-discard',
             dealBtnId: 'btn-deal',
             betBtnId: 'btn-bet',
-            startBtnId: 'btn-start'
+            startBtnId: 'btn-start',
+            bankAmtId: 'bank',
+            betMultiId: "bet"
         };
     }
 }
 
 class GameController {
     constructor() {
+        const MIN_BET = 1;
+        let bet = 1;
+
         let deck = new Deck();
         let hand = new Hand();
+        let credit = 0;
 
         this.roundStart = () => {
             deck.reset();
@@ -133,18 +147,26 @@ class GameController {
         this.getDeck = () => deck.getDeck();
         this.shuffleDeck = () => deck.shuffle();
         this.discard = (card) => hand.discard(card);
+
+        this.insertCredit = (credits = 100) => {
+            credit += credits;
+            return credits;
+        };
+        this.getCredits = () => credit;
+
+        this.increaseBet = (max = 5) => {
+            bet = bet < max ? bet + 1 : 1;
+            return bet;
+        };
+
+        this.removeCredit = () => credit -= bet * MIN_BET;
+        this.getBet = () => bet;
     }
 }
 
 class Controller {
     constructor(gameController) {
         let gameCtrl = gameController;
-        /*
-         const MIN_BET = 25;
-
-         let pot = 0;
-         let credit = 0;
-         */
 
         const STATES = {
             INIT: 0,        // Waiting for user to insert money, update credit, update UI
@@ -169,11 +191,11 @@ class Controller {
                     UiController.setButton(UiController.getDomStrings().startBtnId, true);
                     UiController.setButton(UiController.getDomStrings().dealBtnId, false);
                     UiController.setButton(UiController.getDomStrings().discardBtnId, true);
-                    UiController.setButton(UiController.getDomStrings().betBtnId, true);
+                    UiController.setButton(UiController.getDomStrings().betBtnId, false);
                     break;
                 case STATES.ROUND_PLAY:
                     UiController.setButton(UiController.getDomStrings().dealBtnId, true);
-                    UiController.setButton(UiController.getDomStrings().betBtnId, false);
+                    UiController.setButton(UiController.getDomStrings().betBtnId, true);
                     UiController.setButton(UiController.getDomStrings().discardBtnId, false);
                     break;
                 default:
@@ -187,35 +209,44 @@ class Controller {
             // Event for toggling cards.
             document.querySelector(UiController.getDomStrings().cardContainer).addEventListener('click', (event) => {
                 if(state !== STATES.ROUND_PLAY) return;
-            let id = event.target.parentNode.id;
-            if(id.length > 0) {
-                UiController.toggleCard(id);
-            }
-        });
+                let id = event.target.parentNode.id;
+                if(id.length > 0) {
+                    UiController.toggleCard(id);
+                }
+            });
 
             // TODO: Add credits
             document.getElementById(UiController.getDomStrings().startBtnId).addEventListener('click', () => {
                 state = STATES.GAME_START;
-            this.execute();
-        });
+                // Add money
+                gameCtrl.insertCredit();
+                UiController.setCreditText(gameCtrl.getCredits());
 
-            // Event for dealing cards at round start.
+                this.execute();
+            });
+
+            // Event for dealing cards and deducting money at round start.
             document.getElementById(UiController.getDomStrings().dealBtnId).addEventListener('click', () => {
+                // Cards
                 gameCtrl.shuffleDeck();
-            gameCtrl.deal(5);
-            UiController.updateHand(gameCtrl.getHandCards());
-            // state = STATES.GAME_START;
-            state = STATES.ROUND_PLAY;
-            this.execute();
-        });
+                gameCtrl.deal(5);
+                UiController.updateHand(gameCtrl.getHandCards());
+
+                // Credits
+                gameCtrl.removeCredit();
+                UiController.setCreditText(gameCtrl.getCredits());
+
+                // state = STATES.GAME_START;
+                state = STATES.ROUND_PLAY;
+                this.execute();
+            });
 
             // TODO Event for bet button.
             document.getElementById(UiController.getDomStrings().betBtnId).addEventListener('click', () => {
-                // Remove money from player
-
-                // Add money to pot
-
+                // Set bet multiplier
+                gameCtrl.increaseBet();
                 // Update UI
+                UiController.updateBet(gameCtrl.getBet());
 
             });
 
@@ -224,24 +255,25 @@ class Controller {
                 // Get toggled elements
                 let toggledCards = UiController.getToggledCards();
 
-            // Discard toggled cards from hand
-            toggledCards.forEach((cur) => {
-                gameCtrl.discard(cur);
-        });
+                // Discard toggled cards from hand
+                toggledCards.forEach((cur) => {
+                    gameCtrl.discard(cur);
+                });
 
-            // Deal cards to replace discard
-            gameCtrl.deal(toggledCards.length);
-            UiController.updateHand(gameCtrl.getHandCards());
+                // Deal cards to replace discard
+                gameCtrl.deal(toggledCards.length);
+                UiController.updateHand(gameCtrl.getHandCards());
 
-            state = STATES.SCORING;
-            this.execute();
-        });
+                state = STATES.SCORING;
+                this.execute();
+            });
         };
 
-        // TODO DEBUGGING PURPOSES ONLY!
+        // TODO: DEBUGGING PURPOSES ONLY!
         this.testing = () => {
-            console.log(gameController.getDeck());
-            console.log(gameController.getHandCards());
+            console.log(gameCtrl.getDeck());
+            console.log(gameCtrl.getHandCards());
+            console.log(gameCtrl.getCredits());
         };
     }
 
