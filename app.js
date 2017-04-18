@@ -160,9 +160,9 @@ class UiController {
 }
 
 class GameController {
-    constructor() {
-        const MIN_BET = 1;
-        const MAX_BET_MULTI = 5;
+    constructor(minBet = 1, maxMulti = 5) {
+        const MIN_BET = minBet;
+        const MAX_BET_MULTI = maxMulti;
         let betMulti = 1;
 
         let gameDeck = new GameDeck();
@@ -211,7 +211,6 @@ class GameController {
         this.removeCredit = () => credit -= betMulti * MIN_BET;
         this.getBet = () => betMulti * MIN_BET;
         this.getMinBet = () => MIN_BET;
-
         this.increaseBetMulti = () => {
             // Raise multi till max then reset.
             betMulti = betMulti < MAX_BET_MULTI ? betMulti + 1 : 1;
@@ -220,8 +219,11 @@ class GameController {
             return betMulti;
         };
 
+        this.enoughCredits = () => MIN_BET <= credit;
+
         // Scoring methods
         this.getScoreMulti = () => scoreMap[gameHand.getHandType()] ? scoreMap[gameHand.getHandType()] : 0;
+        // Add winnings.
         this.scoreRound = () => credit += betMulti * MIN_BET * this.getScoreMulti();
     }
 }
@@ -263,6 +265,7 @@ class Controller {
                     gameCtrl.roundStart();
                     UiController.blankHand();
                     UiController.setHandScoreText(0);
+                    // Set available buttons
                     UiController.disableButton(DOM.startBtnId, true);
                     UiController.disableButton(DOM.dealBtnId, false);
                     UiController.disableButton(DOM.discardBtnId, true);
@@ -271,6 +274,7 @@ class Controller {
                     UiController.disableButton(DOM.betBtnId, false);
                     break;
                 case STATES.ROUND_PLAY: // Play round
+                    // Set available buttons
                     UiController.disableButton(DOM.dealBtnId, true);
                     UiController.disableButton(DOM.betBtnId, true);
                     UiController.disableButton(DOM.discardBtnId, false);
@@ -278,9 +282,10 @@ class Controller {
                 case STATES.SCORING: // Score, display score, update credit, ask if user wants to continue.
                     gameCtrl.scoreRound();
                     UiController.setCreditText(gameCtrl.getCredits());
+                    // Set available buttons
                     UiController.disableButton(DOM.discardBtnId, true);
                     UiController.disableButton(DOM.endBtnId, false);
-                    if(gameCtrl.getMinBet() <= gameCtrl.getCredits())
+                    if(gameCtrl.enoughCredits()) // Check if enough credits are available.
                         UiController.disableButton(DOM.contBtnId, false);
                     break;
                 default:
