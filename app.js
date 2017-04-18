@@ -1,5 +1,9 @@
-// DATA STRUCTURES
-class Deck {
+/////////////////////
+// DATA STRUCTURES //
+/////////////////////
+
+
+class GameDeck {
     constructor() {
         let deck;
 
@@ -24,19 +28,20 @@ class Deck {
 
         // Method to reset deck
         this.reset = () => {
-            deck = ['Ac', '2c', '3c', '4c', '5c', '6c', '7c', '8c', '9c', '10c', 'Jc', 'Qc', 'Kc',
-                'Ad', '2d', '3d', '4d', '5d', '6d', '7d', '8d', '9d', '10d', 'Jd', 'Qd', 'Kd',
-                'Ah', '2h', '3h', '4h', '5h', '6h', '7h', '8h', '9h', '10h', 'Jh', 'Qh', 'Kh',
-                'As', '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s', '10s', 'Js', 'Qs', 'Ks'];
+            deck = ['Ac', '2c', '3c', '4c', '5c', '6c', '7c', '8c', '9c', 'Tc', 'Jc', 'Qc', 'Kc',
+                'Ad', '2d', '3d', '4d', '5d', '6d', '7d', '8d', '9d', 'Td', 'Jd', 'Qd', 'Kd',
+                'Ah', '2h', '3h', '4h', '5h', '6h', '7h', '8h', '9h', 'Th', 'Jh', 'Qh', 'Kh',
+                'As', '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s', 'Ts', 'Js', 'Qs', 'Ks'];
         };
 
         this.getDeck = () => deck;
 
+        // Set deck initially.
         this.reset();
     }
 }
 
-class Hand {
+class PlayerHand {
     constructor() {
         let hand = [];
 
@@ -55,10 +60,29 @@ class Hand {
 
         // Getter method for hand.
         this.getCards = () => hand;
+
+        // Method for getting hand type.
+        this.getHandType = () => {
+            let type = Hand.solve(hand);
+            // Make sure pair is Jack or better.
+            if(type.name === "Pair" && type.cards[0].rank < 10) {
+                return null;
+            }
+            // Check if royal flush
+            if(type.name === "Straight Flush" && type.descr === "Royal Flush") {
+                return "Royal Flush";
+            }
+            return type.name;
+        }
     }
 }
 
-// CONTROLLERS
+
+/////////////////
+// CONTROLLERS //
+/////////////////
+
+
 class UiController {
 
     // Select cards for discard by marking them with toggled class.
@@ -67,8 +91,8 @@ class UiController {
         element.classList.toggle('toggled');
     }
 
-    // Method to update card container with cards in hand.
-    static updateHand(hand) {
+    // Method to set container with cards in hand.
+    static setHand(hand) {
         // Clear container
         document.querySelector(UiController.getDomStrings().cardContainer).innerHTML = "";
 
@@ -98,18 +122,23 @@ class UiController {
         return cards;
     }
 
-    // Method that toggles whether button is active, disabled is bool for whether button is disabled or not.
-    static setButton(id, disabled) {
+    // Method that sets whether button is disabled
+    static disableButton(id, disabled) {
         let el = document.getElementById(id);
-        el.disabled = (disabled === undefined ? !el.isDisabled : disabled);
+        // Toggle if no bool is given
+        el.disabled = disabled;
     }
 
     static setCreditText(credits) {
         document.getElementById(this.getDomStrings().bankAmtId).textContent = credits;
     }
 
-    static updateBet(multi) {
-        document.getElementById(this.getDomStrings().betMultiId).textContent = multi + "x";
+    static setBetText(bet) {
+        document.getElementById(this.getDomStrings().betMultiId).textContent = bet;
+    }
+
+    static setHandScoreText(score) {
+        document.getElementById(this.getDomStrings().handScoreId).textContent = score;
     }
 
     // Method that returns object that stores DOM strings.
@@ -121,8 +150,11 @@ class UiController {
             dealBtnId: 'btn-deal',
             betBtnId: 'btn-bet',
             startBtnId: 'btn-start',
+            contBtnId: 'btn-cont',
+            endBtnId: 'btn-end',
             bankAmtId: 'bank',
-            betMultiId: "bet"
+            betMultiId: "bet",
+            handScoreId: "hand"
         };
     }
 }
@@ -130,76 +162,129 @@ class UiController {
 class GameController {
     constructor() {
         const MIN_BET = 1;
-        let bet = 1;
+        const MAX_BET_MULTI = 5;
+        let betMulti = 1;
 
-        let deck = new Deck();
-        let hand = new Hand();
+        let gameDeck = new GameDeck();
+        let gameHand = new PlayerHand();
         let credit = 0;
 
+        // Map of score multipliers.
+        let scoreMap = {
+            "Pair": 1,
+            "Two Pair": 2,
+            "Three of a Kind": 3,
+            "Straight": 10,
+            "Flush": 5,
+            "Full House": 6,
+            "Four of a Kind": 25,
+            "Straight Flush": 50,
+            "Royal Flush": 250
+        };
+
+        // Method for resetting hand and deck.
         this.roundStart = () => {
-            deck.reset();
-            hand.empty();
+            gameDeck.reset();
+            gameDeck.shuffle();
+            gameHand.empty();
+        };
+
+        // Method for resetting initial values
+        this.reset = () => {
+            betMulti = 1;
+
+            gameDeck = new GameDeck();
+            gameHand = new PlayerHand();
+            credit = 0;
         };
 
         // Methods to interact with game data objects.
-        this.deal = (numCards = 1) => hand.draw(deck.deal(numCards));
-        this.getHandCards = () => hand.getCards();
-        this.getDeck = () => deck.getDeck();
-        this.shuffleDeck = () => deck.shuffle();
-        this.discard = (card) => hand.discard(card);
+        this.deal = (numCards = 1) => gameHand.draw(gameDeck.deal(numCards));
+        this.getHandCards = () => gameHand.getCards();
+        this.getDeck = () => gameDeck.getDeck();
+        this.shuffleDeck = () => gameDeck.shuffle();
+        this.discard = (card) => gameHand.discard(card);
 
-        this.insertCredit = (credits = 100) => {
-            credit += credits;
-            return credits;
-        };
+        // Methods to deal with player values.
+        this.insertCredit = (credits = 100) => credit += credits;
         this.getCredits = () => credit;
+        this.removeCredit = () => credit -= betMulti * MIN_BET;
+        this.getBet = () => betMulti * MIN_BET;
+        this.getMinBet = () => MIN_BET;
 
-        this.increaseBet = (max = 5) => {
-            bet = bet < max ? bet + 1 : 1;
-            return bet;
+        this.increaseBetMulti = () => {
+            // Raise multi till max then reset.
+            betMulti = betMulti < MAX_BET_MULTI ? betMulti + 1 : 1;
+            // Reset if not enough credits to cover bet.
+            if(betMulti * MIN_BET > credit) betMulti = 1;
+            return betMulti;
         };
 
-        this.removeCredit = () => credit -= bet * MIN_BET;
-        this.getBet = () => bet;
+        // Scoring methods
+        this.getScoreMulti = () => scoreMap[gameHand.getHandType()] ? scoreMap[gameHand.getHandType()] : 0;
+        this.scoreRound = () => credit += betMulti * MIN_BET * this.getScoreMulti();
     }
 }
 
 class Controller {
     constructor(gameController) {
         let gameCtrl = gameController;
+        const DOM = UiController.getDomStrings();
 
         const STATES = {
             INIT: 0,        // Waiting for user to insert money, update credit, update UI
-            GAME_START: 1,  // Waiting for user to bet money, update credit and pot, update UI
-            ROUND_START: 2, // Deal cards, update UI
-            ROUND_PLAY: 3,  // Play round
-            SCORING: 4,     // Score, display score, update credit
-            ROUND_END: 5    // Cont?
+            GAME_START: 1,  // Waiting for user to bet money, update credit and pot, update UI, deal cards, update UI
+            ROUND_PLAY: 2,  // Play round
+            SCORING: 3,     // Score, display score, update credit, ask if user wants to continue.
         };
 
         let state = STATES.INIT;
+
+        // State machine sets basic UI elements and game operations for each state.
         this.execute = function () {
             switch (state) {
-                case STATES.INIT:
+                case STATES.INIT: // Waiting for user to insert money, update credit, update UI
+                    // Reset game controller.
+                    gameCtrl.reset();
+                    // Set initial UI variables.
+                    UiController.setHandScoreText(0);
+                    UiController.setBetText(1);
+                    UiController.setCreditText(0);
                     UiController.blankHand();
-                    UiController.setButton(UiController.getDomStrings().dealBtnId, true);
-                    UiController.setButton(UiController.getDomStrings().discardBtnId, true);
-                    UiController.setButton(UiController.getDomStrings().betBtnId, true);
+                    // Set available buttons
+                    UiController.disableButton(DOM.startBtnId, false);
+                    UiController.disableButton(DOM.dealBtnId, true);
+                    UiController.disableButton(DOM.discardBtnId, true);
+                    UiController.disableButton(DOM.betBtnId, true);
+                    UiController.disableButton(DOM.contBtnId, true);
+                    UiController.disableButton(DOM.endBtnId, true);
                     break;
-                case STATES.GAME_START:
+                case STATES.GAME_START: // Waiting for user to bet money, update credit and pot, update UI
                     gameCtrl.roundStart();
-                    UiController.setButton(UiController.getDomStrings().startBtnId, true);
-                    UiController.setButton(UiController.getDomStrings().dealBtnId, false);
-                    UiController.setButton(UiController.getDomStrings().discardBtnId, true);
-                    UiController.setButton(UiController.getDomStrings().betBtnId, false);
+                    UiController.blankHand();
+                    UiController.setHandScoreText(0);
+                    UiController.disableButton(DOM.startBtnId, true);
+                    UiController.disableButton(DOM.dealBtnId, false);
+                    UiController.disableButton(DOM.discardBtnId, true);
+                    UiController.disableButton(DOM.contBtnId, true);
+                    UiController.disableButton(DOM.endBtnId, true);
+                    UiController.disableButton(DOM.betBtnId, false);
                     break;
-                case STATES.ROUND_PLAY:
-                    UiController.setButton(UiController.getDomStrings().dealBtnId, true);
-                    UiController.setButton(UiController.getDomStrings().betBtnId, true);
-                    UiController.setButton(UiController.getDomStrings().discardBtnId, false);
+                case STATES.ROUND_PLAY: // Play round
+                    UiController.disableButton(DOM.dealBtnId, true);
+                    UiController.disableButton(DOM.betBtnId, true);
+                    UiController.disableButton(DOM.discardBtnId, false);
+                    break;
+                case STATES.SCORING: // Score, display score, update credit, ask if user wants to continue.
+                    gameCtrl.scoreRound();
+                    UiController.setCreditText(gameCtrl.getCredits());
+                    UiController.disableButton(DOM.discardBtnId, true);
+                    UiController.disableButton(DOM.endBtnId, false);
+                    if(gameCtrl.getMinBet() <= gameCtrl.getCredits())
+                        UiController.disableButton(DOM.contBtnId, false);
                     break;
                 default:
-                    state = STATES.GAME_START;
+                    state = STATES.INIT;
                     this.execute();
             }
         };
@@ -207,7 +292,7 @@ class Controller {
         // Setup event listeners
         this.setupListeners = function () {
             // Event for toggling cards.
-            document.querySelector(UiController.getDomStrings().cardContainer).addEventListener('click', (event) => {
+            document.querySelector(DOM.cardContainer).addEventListener('click', (event) => {
                 if(state !== STATES.ROUND_PLAY) return;
                 let id = event.target.parentNode.id;
                 if(id.length > 0) {
@@ -215,8 +300,8 @@ class Controller {
                 }
             });
 
-            // TODO: Add credits
-            document.getElementById(UiController.getDomStrings().startBtnId).addEventListener('click', () => {
+            // Add credits to start game.
+            document.getElementById(DOM.startBtnId).addEventListener('click', () => {
                 state = STATES.GAME_START;
                 // Add money
                 gameCtrl.insertCredit();
@@ -226,11 +311,11 @@ class Controller {
             });
 
             // Event for dealing cards and deducting money at round start.
-            document.getElementById(UiController.getDomStrings().dealBtnId).addEventListener('click', () => {
+            document.getElementById(DOM.dealBtnId).addEventListener('click', () => {
                 // Cards
-                gameCtrl.shuffleDeck();
                 gameCtrl.deal(5);
-                UiController.updateHand(gameCtrl.getHandCards());
+                UiController.setHand(gameCtrl.getHandCards());
+                UiController.setHandScoreText(gameCtrl.getBet() * gameCtrl.getScoreMulti());
 
                 // Credits
                 gameCtrl.removeCredit();
@@ -241,17 +326,17 @@ class Controller {
                 this.execute();
             });
 
-            // TODO Event for bet button.
-            document.getElementById(UiController.getDomStrings().betBtnId).addEventListener('click', () => {
-                // Set bet multiplier
-                gameCtrl.increaseBet();
+            // Event for changing bet.
+            document.getElementById(DOM.betBtnId).addEventListener('click', () => {
+                // Change bet multiplier
+                gameCtrl.increaseBetMulti();
                 // Update UI
-                UiController.updateBet(gameCtrl.getBet());
+                UiController.setBetText(gameCtrl.getBet());
 
             });
 
             // Event for discard button.
-            document.getElementById(UiController.getDomStrings().discardBtnId).addEventListener('click', () => {
+            document.getElementById(DOM.discardBtnId).addEventListener('click', () => {
                 // Get toggled elements
                 let toggledCards = UiController.getToggledCards();
 
@@ -262,19 +347,38 @@ class Controller {
 
                 // Deal cards to replace discard
                 gameCtrl.deal(toggledCards.length);
-                UiController.updateHand(gameCtrl.getHandCards());
+                UiController.setHand(gameCtrl.getHandCards());
+                UiController.setHandScoreText(gameCtrl.getBet() * gameCtrl.getScoreMulti());
 
                 state = STATES.SCORING;
                 this.execute();
             });
+
+            // Event for continue button
+            document.getElementById(DOM.contBtnId).addEventListener('click', () => {
+                state = STATES.GAME_START;
+                if(gameCtrl.getBet() > gameCtrl.getCredits()) {
+                    gameCtrl.increaseBetMulti();
+                    UiController.setBetText(gameCtrl.getBet());
+                }
+                this.execute();
+            });
+
+            // Event for cash out button
+            document.getElementById(DOM.endBtnId).addEventListener('click', () => {
+               state = STATES.INIT;
+               this.execute();
+            });
         };
 
+/*
         // TODO: DEBUGGING PURPOSES ONLY!
         this.testing = () => {
             console.log(gameCtrl.getDeck());
             console.log(gameCtrl.getHandCards());
             console.log(gameCtrl.getCredits());
         };
+*/
     }
 
     init() {
